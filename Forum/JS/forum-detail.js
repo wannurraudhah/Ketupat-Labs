@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'login.html';
         return;
     }
-    
+
     initEventListeners();
     loadForumDetails();
 });
@@ -30,14 +30,14 @@ function initEventListeners() {
             } catch (error) {
                 console.error('Logout error:', error);
             }
-            
+
             sessionStorage.removeItem('userLoggedIn');
             sessionStorage.removeItem('userEmail');
             sessionStorage.removeItem('userId');
             window.location.href = 'login.html';
         });
     }
-    
+
     const btnCreatePost = document.getElementById('btnCreatePost');
     if (btnCreatePost) {
         btnCreatePost.addEventListener('click', () => {
@@ -45,7 +45,7 @@ function initEventListeners() {
             window.location.href = `create-post.html?forum=${forumId}`;
         });
     }
-    
+
     const btnCreatePostForForum = document.getElementById('btnCreatePostForForum');
     if (btnCreatePostForForum) {
         btnCreatePostForForum.addEventListener('click', () => {
@@ -53,15 +53,15 @@ function initEventListeners() {
             window.location.href = `create-post.html?forum=${forumId}`;
         });
     }
-    
+
     const btnJoin = document.getElementById('btnJoin');
     if (btnJoin) {
         btnJoin.addEventListener('click', joinForum);
     }
-    
+
     const btnMore = document.getElementById('btnMore');
     if (btnMore) {
-        btnMore.addEventListener('click', function(e) {
+        btnMore.addEventListener('click', function (e) {
             e.stopPropagation();
             const menu = document.getElementById('moreMenu');
             if (menu) {
@@ -69,42 +69,42 @@ function initEventListeners() {
             }
         });
     }
-    
+
     // Close more menu when clicking outside
     const moreMenu = document.getElementById('moreMenu');
     if (moreMenu && btnMore) {
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             if (!moreMenu.contains(e.target) && !btnMore.contains(e.target)) {
                 moreMenu.classList.remove('show');
             }
         });
     }
-    
+
     const muteOption = document.getElementById('muteOption');
     if (muteOption) {
         muteOption.addEventListener('click', toggleMute);
     }
-    
+
     const favoriteOption = document.getElementById('favoriteOption');
     if (favoriteOption) {
         favoriteOption.addEventListener('click', toggleFavorite);
     }
-    
+
     const manageOption = document.getElementById('manageOption');
     if (manageOption) {
         manageOption.addEventListener('click', manageForum);
     }
-    
+
     const leaveOption = document.getElementById('leaveOption');
     if (leaveOption) {
         leaveOption.addEventListener('click', leaveForum);
     }
-    
-    const closePostModal = document.getElementById('closePostModal');
-    if (closePostModal) {
-        closePostModal.addEventListener('click', closePostModal);
+
+    const closePostModalBtn = document.getElementById('closePostModal');
+    if (closePostModalBtn) {
+        closePostModalBtn.addEventListener('click', closePostModal);
     }
-    
+
     const sortPosts = document.getElementById('sortPosts');
     if (sortPosts) {
         sortPosts.addEventListener('change', (e) => {
@@ -116,25 +116,25 @@ function initEventListeners() {
 async function loadForumDetails() {
     const urlParams = new URLSearchParams(window.location.search);
     const forumId = urlParams.get('id');
-    
+
     if (!forumId) {
         showError('No forum selected');
         return;
     }
-    
+
     forumState.forumId = forumId;
-    
+
     try {
         // Load forum details
         const forumResponse = await fetch(`../api/forum_endpoints.php?action=get_forum_details&forum_id=${forumId}`, {
             credentials: 'include'
         });
         const forumData = await forumResponse.json();
-        
+
         if (forumData.status === 200) {
             forumState.forum = forumData.data.forum;
             renderForumHeader();
-            
+
             // Load posts
             loadPosts();
         } else {
@@ -148,20 +148,20 @@ async function loadForumDetails() {
 
 function renderForumHeader() {
     const forum = forumState.forum;
-    
+
     // Main title and avatar
     document.getElementById('forumName').textContent = forum.title;
-    
+
     // Avatar - show first letters of forum title
     const firstLetters = forum.title.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
     document.getElementById('forumAvatar').innerHTML = firstLetters;
-    
+
     // Sidebar info
     document.getElementById('forumDescription').textContent = forum.description || 'No description available.';
     document.getElementById('memberCount').textContent = forum.member_count || 0;
     document.getElementById('postCount').textContent = forum.post_count || 0;
     document.getElementById('createdDate').textContent = formatDate(forum.created_at);
-    
+
     // Visibility
     const visibilityMap = {
         'public': 'Public',
@@ -169,38 +169,46 @@ function renderForumHeader() {
         'specific': 'Invite Only'
     };
     document.getElementById('forumVisibility').textContent = visibilityMap[forum.visibility] || 'Public';
-    
+
     // Set membership status
     forumState.isMember = forum.is_member || false;
     forumState.userRole = forum.user_role || null;
     forumState.isMuted = forum.is_muted || false;
     forumState.isFavorite = forum.is_favorite || false;
-    
+
     // Show/hide buttons based on membership
     const createPostBtn = document.getElementById('btnCreatePostForForum');
     const joinBtn = document.getElementById('btnJoin');
     const joinedBtn = document.getElementById('btnJoined');
     const manageOption = document.getElementById('manageOption');
-    
+
     if (forumState.isMember) {
-        createPostBtn.style.display = 'flex';
-        joinedBtn.style.display = 'block';
-        joinBtn.style.display = 'none';
-        
+        if (createPostBtn) createPostBtn.style.display = 'flex';
+        if (joinedBtn) joinedBtn.style.display = 'block';
+        if (joinBtn) joinBtn.style.display = 'none';
+
         // Show manage option for admins/moderators
         if (forumState.userRole === 'admin' || forumState.userRole === 'moderator') {
-            manageOption.style.display = 'flex';
+            if (manageOption) manageOption.style.display = 'flex';
         }
     } else {
-        createPostBtn.style.display = 'none';
-        joinedBtn.style.display = 'none';
-        joinBtn.style.display = 'block';
-        manageOption.style.display = 'none';
+        if (createPostBtn) createPostBtn.style.display = 'none';
+        if (joinedBtn) joinedBtn.style.display = 'none';
+        if (joinBtn) joinBtn.style.display = 'block';
+        if (manageOption) manageOption.style.display = 'none';
     }
-    
+
     // Update mute/favorite button text
-    document.getElementById('muteText').textContent = forumState.isMuted ? 'Unmute Forum' : 'Mute Forum';
-    document.getElementById('favoriteText').textContent = forumState.isFavorite ? 'Remove from Favorites' : 'Add to Favorites';
+    // Update mute/favorite button text
+    const muteText = document.getElementById('muteText');
+    if (muteText) {
+        muteText.textContent = forumState.isMuted ? 'Unmute Forum' : 'Mute Forum';
+    }
+
+    const favoriteText = document.getElementById('favoriteText');
+    if (favoriteText) {
+        favoriteText.textContent = forumState.isFavorite ? 'Remove from Favorites' : 'Add to Favorites';
+    }
 }
 
 function formatDate(dateString) {
@@ -213,7 +221,7 @@ async function loadPosts() {
     try {
         const response = await fetch(`../api/forum_endpoints.php?action=get_posts&forum_id=${forumState.forumId}`);
         const data = await response.json();
-        
+
         if (data.status === 200) {
             renderPosts(data.data.posts);
         } else {
@@ -227,7 +235,7 @@ async function loadPosts() {
 
 function renderPosts(posts) {
     const container = document.getElementById('postsContent');
-    
+
     if (posts.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
@@ -238,7 +246,7 @@ function renderPosts(posts) {
         `;
         return;
     }
-    
+
     container.innerHTML = `
         <div class="reddit-content">
             ${posts.map(post => `
@@ -265,32 +273,32 @@ function renderPosts(posts) {
                         ${post.attachments ? `
                             <div style="margin-top: 12px;">
                                 ${(() => {
-                                    try {
-                                        const attachments = typeof post.attachments === 'string' 
-                                            ? JSON.parse(post.attachments) 
-                                            : post.attachments;
-                                        if (!Array.isArray(attachments)) return '';
-                                        
-                                        const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-                                        const imageAttachments = [];
-                                        const otherAttachments = [];
-                                        
-                                        attachments.forEach(att => {
-                                            const ext = att.name.split('.').pop().toLowerCase();
-                                            if (imageExts.includes(ext)) {
-                                                imageAttachments.push(att);
-                                            } else {
-                                                otherAttachments.push(att);
-                                            }
-                                        });
-                                        
-                                        let html = '';
-                                        
-                                        // Show image previews
-                                        if (imageAttachments.length > 0) {
-                                            html += '<div class="post-image-preview" style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px;">';
-                                            imageAttachments.forEach(att => {
-                                                html += `
+                try {
+                    const attachments = typeof post.attachments === 'string'
+                        ? JSON.parse(post.attachments)
+                        : post.attachments;
+                    if (!Array.isArray(attachments)) return '';
+
+                    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                    const imageAttachments = [];
+                    const otherAttachments = [];
+
+                    attachments.forEach(att => {
+                        const ext = att.name.split('.').pop().toLowerCase();
+                        if (imageExts.includes(ext)) {
+                            imageAttachments.push(att);
+                        } else {
+                            otherAttachments.push(att);
+                        }
+                    });
+
+                    let html = '';
+
+                    // Show image previews
+                    if (imageAttachments.length > 0) {
+                        html += '<div class="post-image-preview" style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px;">';
+                        imageAttachments.forEach(att => {
+                            html += `
                                                     <div style="position: relative; max-width: 300px; max-height: 300px;">
                                                         <img src="${att.url}" alt="${escapeHtml(att.name)}" 
                                                              style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 4px; cursor: pointer;" 
@@ -298,41 +306,41 @@ function renderPosts(posts) {
                                                              onerror="this.style.display='none';">
                                                     </div>
                                                 `;
-                                            });
-                                            html += '</div>';
-                                        }
-                                        
-                                        // Show other file attachments as links
-                                        if (otherAttachments.length > 0) {
-                                            html += '<div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px;">';
-                                            otherAttachments.forEach(att => {
-                                                html += `
+                        });
+                        html += '</div>';
+                    }
+
+                    // Show other file attachments as links
+                    if (otherAttachments.length > 0) {
+                        html += '<div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px;">';
+                        otherAttachments.forEach(att => {
+                            html += `
                                                     <a href="${att.url}" target="_blank" class="attachment-file" onclick="event.stopPropagation();">
                                                         <i class="fas ${getFileIcon(att.name)}"></i>
                                                         ${escapeHtml(att.name)}
                                                     </a>
                                                 `;
-                                            });
-                                            html += '</div>';
-                                        }
-                                        
-                                        return html;
-                                    } catch (e) {
-                                        return '';
-                                    }
-                                })()}
+                        });
+                        html += '</div>';
+                    }
+
+                    return html;
+                } catch (e) {
+                    return '';
+                }
+            })()}
                             </div>
                         ` : ''}
                         ${post.tags ? `
                             <div class="post-tags" style="margin-top: 8px;">
                                 ${(() => {
-                                    try {
-                                        const tags = JSON.parse(post.tags);
-                                        return Array.isArray(tags) ? tags : [];
-                                    } catch (e) {
-                                        return [];
-                                    }
-                                })().map(tag => `
+                try {
+                    const tags = JSON.parse(post.tags);
+                    return Array.isArray(tags) ? tags : [];
+                } catch (e) {
+                    return [];
+                }
+            })().map(tag => `
                                     <span class="post-tag">#${escapeHtml(tag)}</span>
                                 `).join('')}
                             </div>
@@ -364,9 +372,9 @@ async function joinForum() {
                 forum_id: forumState.forumId
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.status === 200) {
             forumState.isMember = true;
             renderForumHeader();
@@ -382,7 +390,7 @@ async function joinForum() {
 
 async function toggleMute() {
     const action = forumState.isMuted ? 'unmute_forum' : 'mute_forum';
-    
+
     try {
         const response = await fetch(`../api/forum_endpoints.php?action=${action}`, {
             method: 'POST',
@@ -392,9 +400,9 @@ async function toggleMute() {
                 forum_id: forumState.forumId
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.status === 200) {
             forumState.isMuted = !forumState.isMuted;
             renderForumHeader();
@@ -409,7 +417,7 @@ async function toggleMute() {
 
 async function toggleFavorite() {
     const action = forumState.isFavorite ? 'unfavorite_forum' : 'favorite_forum';
-    
+
     try {
         const response = await fetch(`../api/forum_endpoints.php?action=${action}`, {
             method: 'POST',
@@ -419,9 +427,9 @@ async function toggleFavorite() {
                 forum_id: forumState.forumId
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.status === 200) {
             forumState.isFavorite = !forumState.isFavorite;
             renderForumHeader();
@@ -442,7 +450,7 @@ async function leaveForum() {
     if (!confirm('Are you sure you want to leave this forum?')) {
         return;
     }
-    
+
     try {
         const response = await fetch('../api/forum_endpoints.php?action=leave_forum', {
             method: 'POST',
@@ -452,9 +460,9 @@ async function leaveForum() {
                 forum_id: forumState.forumId
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.status === 200) {
             window.location.href = 'forum.html';
         } else {
@@ -472,7 +480,7 @@ async function openPost(postId) {
 
 async function renderPostDetail(post) {
     const container = document.getElementById('postDetailContent');
-    
+
     container.innerHTML = `
         <div class="post-detail">
             <div class="post-detail-header">
@@ -495,13 +503,13 @@ async function renderPostDetail(post) {
                 <div style="margin-bottom: 20px;">
                     <strong>Attachments:</strong>
                     ${(() => {
-                        try {
-                            const attachments = JSON.parse(post.attachments);
-                            return Array.isArray(attachments) ? attachments : [];
-                        } catch (e) {
-                            return [];
-                        }
-                    })().map(att => `
+                try {
+                    const attachments = JSON.parse(post.attachments);
+                    return Array.isArray(attachments) ? attachments : [];
+                } catch (e) {
+                    return [];
+                }
+            })().map(att => `
                         <a href="${att.url}" target="_blank" class="attachment-file" style="display: inline-flex; margin-right: 10px;">
                             <i class="fas ${getFileIcon(att.name)}"></i>
                             ${escapeHtml(att.name)}
@@ -513,13 +521,13 @@ async function renderPostDetail(post) {
             ${post.tags ? `
                 <div class="post-detail-tags">
                     ${(() => {
-                        try {
-                            const tags = JSON.parse(post.tags);
-                            return Array.isArray(tags) ? tags : [];
-                        } catch (e) {
-                            return [];
-                        }
-                    })().map(tag => `
+                try {
+                    const tags = JSON.parse(post.tags);
+                    return Array.isArray(tags) ? tags : [];
+                } catch (e) {
+                    return [];
+                }
+            })().map(tag => `
                         <span class="post-tag">#${escapeHtml(tag)}</span>
                     `).join('')}
                 </div>
@@ -545,18 +553,18 @@ async function renderPostDetail(post) {
             </div>
         </div>
     `;
-    
+
     loadComments(post.id);
 }
 
 function renderComments(comments) {
     const container = document.getElementById('commentsContainer');
-    
+
     if (!comments || comments.length === 0) {
         container.innerHTML = '<p style="color: #878a8c; text-align: center; padding: 20px;">No comments yet</p>';
         return;
     }
-    
+
     // Flatten all comments and replies into a single flat list
     const flattenComments = (comments, parentAuthor = null) => {
         const flatList = [];
@@ -571,14 +579,14 @@ function renderComments(comments) {
         });
         return flatList;
     };
-    
+
     const flatComments = flattenComments(comments);
-    
+
     // Sort by creation date (newest first)
     const sortedComments = flatComments.sort((a, b) => {
         return new Date(b.created_at) - new Date(a.created_at);
     });
-    
+
     container.innerHTML = sortedComments.map((comment, index) => renderCommentItemForumDetail(comment, 0, index === sortedComments.length - 1, comment.parentAuthor)).join('');
 }
 
@@ -597,16 +605,16 @@ function toggleCommentCollapseForumDetail(commentId) {
 
 function renderCommentItemForumDetail(comment, depth = 0, isLastChild = false, parentAuthor = null) {
     const isReply = comment.isReply || false;
-    
+
     return `
         <div class="comment-item" data-comment-id="${comment.id}" style="padding: 12px 0; margin-bottom: 16px; border-bottom: 1px solid #edeff1;">
             <div class="comment-header">
                 <div class="comment-author">
                     <div class="comment-author-avatar">
-                        ${comment.author_avatar ? 
-                            `<img src="${comment.author_avatar}" alt="${comment.author_username}" style="width: 100%; height: 100%; border-radius: 50%;">` :
-                            (comment.author_username ? comment.author_username.charAt(0).toUpperCase() : '?')
-                        }
+                        ${comment.author_avatar ?
+            `<img src="${comment.author_avatar}" alt="${comment.author_username}" style="width: 100%; height: 100%; border-radius: 50%;">` :
+            (comment.author_username ? comment.author_username.charAt(0).toUpperCase() : '?')
+        }
                     </div>
                     <div style="flex: 1;">
                         <div style="font-weight: 600; font-size: 14px; color: #1c1c1c;">u/${escapeHtml(comment.author_name || comment.author_username)}</div>
@@ -663,7 +671,7 @@ async function loadComments(postId) {
     try {
         const response = await fetch(`../api/forum_endpoints.php?action=get_comments&post_id=${postId}&sort=top`);
         const data = await response.json();
-        
+
         if (data.status === 200) {
             renderComments(data.data.comments);
         }
@@ -674,14 +682,14 @@ async function loadComments(postId) {
 
 async function submitReplyForumDetail(commentId) {
     if (!currentPostIdForReplies) return;
-    
+
     const replyInput = document.getElementById(`replyInput_${commentId}`);
     const content = replyInput.value.trim();
-    
+
     if (!content) {
         return;
     }
-    
+
     try {
         const response = await fetch('../api/forum_endpoints.php?action=create_comment', {
             method: 'POST',
@@ -692,9 +700,9 @@ async function submitReplyForumDetail(commentId) {
                 content: content
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.status === 200) {
             replyInput.value = '';
             toggleReplyFormForumDetail(commentId);
@@ -740,7 +748,7 @@ function cancelReplyForumDetail(commentId) {
 
 async function toggleCommentLikeForumDetail(commentId) {
     if (!currentPostIdForReplies) return;
-    
+
     try {
         const response = await fetch('../api/forum_endpoints.php?action=add_reaction', {
             method: 'POST',
@@ -751,9 +759,9 @@ async function toggleCommentLikeForumDetail(commentId) {
                 reaction_type: 'like'
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.status === 200) {
             await loadComments(currentPostIdForReplies);
         }
@@ -809,7 +817,7 @@ function formatTime(dateString) {
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
-    
+
     if (days > 7) {
         return date.toLocaleDateString();
     } else if (days > 0) {

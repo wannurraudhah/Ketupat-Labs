@@ -3,6 +3,11 @@
 header('Content-Type: application/json');
 require_once '../config/database.php';
 
+// Session is started by database.php, but ensure it's available
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 function sendResponse($status, $data, $message = '') {
     http_response_code($status);
     echo json_encode([
@@ -620,6 +625,7 @@ try {
                 $post = $stmt->fetch(PDO::FETCH_ASSOC);
                 
                 if ($post['author_id'] != $user_id) {
+                    $username = $_SESSION['username'] ?? 'Someone';
                     $stmt = $db->prepare("
                         INSERT INTO notifications (user_id, type, title, message, related_type, related_id)
                         VALUES (?, 'comment', ?, ?, 'comment', ?)
@@ -627,7 +633,7 @@ try {
                     $stmt->execute([
                         $post['author_id'],
                         "New comment on your post",
-                        $_SESSION['username'] . " commented on: " . $post['title'],
+                        $username . " commented on: " . $post['title'],
                         $comment_id
                     ]);
                 }
@@ -638,6 +644,7 @@ try {
                     $parent_comment = $stmt->fetch(PDO::FETCH_ASSOC);
                     
                     if ($parent_comment && $parent_comment['author_id'] != $user_id) {
+                        $username = $_SESSION['username'] ?? 'Someone';
                         $stmt = $db->prepare("
                             INSERT INTO notifications (user_id, type, title, message, related_type, related_id)
                             VALUES (?, 'reply', ?, ?, 'comment', ?)
@@ -645,7 +652,7 @@ try {
                         $stmt->execute([
                             $parent_comment['author_id'],
                             "Reply to your comment",
-                            $_SESSION['username'] . " replied to your comment",
+                            $username . " replied to your comment",
                             $comment_id
                         ]);
                     }
@@ -659,7 +666,7 @@ try {
             }
             break;
         
-        case 'get_comment':
+        case 'get_comments':
             if ($method !== 'GET') {
                 sendResponse(405, null, 'Method not allowed');
             }
@@ -911,7 +918,8 @@ try {
                     $stmt = $db->prepare("DELETE FROM reaction WHERE id = ?");
                     $stmt->execute([$existing['id']]);
                     
-                    $stmt = $db->prepare("UPDATE forum_{$target_type}s SET reaction_count = reaction_count - 1 WHERE id = ?");
+                    $table_name = $target_type === 'post' ? 'forum_post' : 'comment';
+                    $stmt = $db->prepare("UPDATE $table_name SET reaction_count = reaction_count - 1 WHERE id = ?");
                     $stmt->execute([$target_id]);
                     
                     sendResponse(200, null, 'Reaction removed');
@@ -927,7 +935,8 @@ try {
                 ");
                 $stmt->execute([$user_id, $target_type, $target_id, $reaction_type]);
                 
-                $stmt = $db->prepare("UPDATE forum_{$target_type}s SET reaction_count = reaction_count + 1 WHERE id = ?");
+                $table_name = $target_type === 'post' ? 'forum_post' : 'comment';
+                $stmt = $db->prepare("UPDATE $table_name SET reaction_count = reaction_count + 1 WHERE id = ?");
                 $stmt->execute([$target_id]);
                 
                 sendResponse(200, null, 'Reaction added');

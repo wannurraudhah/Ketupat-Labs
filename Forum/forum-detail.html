@@ -152,7 +152,7 @@
                                 <i class="fas fa-cog"></i>
                                 <span>Manage Forum</span>
                             </div>
-                            <div class="more-menu-item danger" id="leaveOption">
+                            <div class="more-menu-item" id="leaveOption" style="color: #ff4500;">
                                 <i class="fas fa-sign-out-alt"></i>
                                 <span>Leave Forum</span>
                             </div>
@@ -223,73 +223,73 @@
 
             </aside>
         </div>
-    </div>
 
-    <div class="modal" id="postDetailModal">
-        <div class="modal-content large">
-            <div class="modal-header">
-                <button class="modal-close" id="closePostModal">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body" id="postDetailContent">
+
+        <div class="modal" id="postDetailModal">
+            <div class="modal-content large">
+                <div class="modal-header">
+                    <button class="modal-close" id="closePostModal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body" id="postDetailContent">
+                </div>
             </div>
         </div>
-    </div>
 
-    <script src="JS/forum-detail.js"></script>
-    <script>
-        // Navigation functionality
-        document.addEventListener('DOMContentLoaded', () => {
-            // Load user info from sessionStorage
-            const userName = sessionStorage.getItem('userName') || sessionStorage.getItem('userEmail') || 'User';
-            const userEmail = sessionStorage.getItem('userEmail') || '';
+        <script src="JS/forum-detail.js"></script>
+        <script>
+            // Navigation functionality
+            document.addEventListener('DOMContentLoaded', () => {
+                // Load user info from sessionStorage
+                const userName = sessionStorage.getItem('userName') || sessionStorage.getItem('userEmail') || 'User';
+                const userEmail = sessionStorage.getItem('userEmail') || '';
 
-            // Update user name in navigation
-            const userNameElement = document.getElementById('userName');
-            if (userNameElement) {
-                userNameElement.textContent = userName;
-            }
+                // Update user name in navigation
+                const userNameElement = document.getElementById('userName');
+                if (userNameElement) {
+                    userNameElement.textContent = userName;
+                }
 
-            const mobileUserName = document.getElementById('mobileUserName');
-            if (mobileUserName) {
-                mobileUserName.textContent = userName;
-            }
+                const mobileUserName = document.getElementById('mobileUserName');
+                if (mobileUserName) {
+                    mobileUserName.textContent = userName;
+                }
 
-            const mobileUserEmail = document.getElementById('mobileUserEmail');
-            if (mobileUserEmail) {
-                mobileUserEmail.textContent = userEmail;
-            }
+                const mobileUserEmail = document.getElementById('mobileUserEmail');
+                if (mobileUserEmail) {
+                    mobileUserEmail.textContent = userEmail;
+                }
 
-            // User menu toggle
-            const userMenuBtn = document.getElementById('userMenuBtn');
-            const userMenu = document.getElementById('userMenu');
+                // User menu toggle
+                const userMenuBtn = document.getElementById('userMenuBtn');
+                const userMenu = document.getElementById('userMenu');
 
-            if (userMenuBtn && userMenu) {
-                userMenuBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    userMenu.classList.toggle('hidden');
-                });
+                if (userMenuBtn && userMenu) {
+                    userMenuBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        userMenu.classList.toggle('hidden');
+                    });
 
-                // Close menu when clicking outside
-                document.addEventListener('click', (e) => {
-                    if (!userMenuBtn.contains(e.target) && !userMenu.contains(e.target)) {
-                        userMenu.classList.add('hidden');
-                    }
-                });
-            }
+                    // Close menu when clicking outside
+                    document.addEventListener('click', (e) => {
+                        if (!userMenuBtn.contains(e.target) && !userMenu.contains(e.target)) {
+                            userMenu.classList.add('hidden');
+                        }
+                    });
+                }
 
-            // Mobile menu toggle
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-            const mobileMenu = document.getElementById('mobileMenu');
+                // Mobile menu toggle
+                const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+                const mobileMenu = document.getElementById('mobileMenu');
 
-            if (mobileMenuBtn && mobileMenu) {
-                mobileMenuBtn.addEventListener('click', () => {
-                    mobileMenu.classList.toggle('hidden');
-                });
-            }
-        });
-    </script>
+                if (mobileMenuBtn && mobileMenu) {
+                    mobileMenuBtn.addEventListener('click', () => {
+                        mobileMenu.classList.toggle('hidden');
+                    });
+                }
+            });
+        </script>
 </body>
 
 </html>
