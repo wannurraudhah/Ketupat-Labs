@@ -27,42 +27,78 @@
                             onclick="alert('Launching Chatbot Interface (M4)...')">
                             Ask for Help (M4)
                         </button>
-                        <h3 class="text-xl font-semibold text-gray-800 border-b pb-2">1. Lesson Content</h3>
-                        <div class="mt-3 text-gray-700 prose max-w-none">
-                            {!! nl2br(e($lesson->content)) !!}
+                        <h3 class="text-xl font-semibold text-gray-800 border-b pb-2">Lesson Content</h3>
+                        
+                        {{-- Dynamic Block Rendering --}}
+                        <div class="mt-6 space-y-6">
+                            @if(isset($lesson->content_blocks['blocks']) && count($lesson->content_blocks['blocks']) > 0)
+                                @foreach($lesson->content_blocks['blocks'] as $index => $block)
+                                    <div class="lesson-block">
+                                        @if($block['type'] === 'heading')
+                                            <h2 class="text-2xl font-bold text-gray-900 mb-3">
+                                                {{ $block['content'] }}
+                                            </h2>
+                                        
+                                        @elseif($block['type'] === 'text')
+                                            <div class="text-gray-700 prose max-w-none leading-relaxed">
+                                                {!! nl2br(e($block['content'])) !!}
+                                            </div>
+                                        
+                                        @elseif($block['type'] === 'youtube')
+                                            @php
+                                                // Extract YouTube video ID from URL
+                                                $videoUrl = $block['content'];
+                                                preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/', $videoUrl, $matches);
+                                                $videoId = $matches[1] ?? null;
+                                            @endphp
+                                            
+                                            @if($videoId)
+                                                <div class="video-container my-6">
+                                                    <h4 class="text-lg font-semibold text-gray-800 mb-3">📹 Video Demonstration</h4>
+                                                    <div class="relative" style="padding-bottom: 56.25%; height: 0;">
+                                                        <iframe 
+                                                            src="https://www.youtube.com/embed/{{ $videoId }}" 
+                                                            frameborder="0" 
+                                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                                            allowfullscreen
+                                                            class="absolute top-0 left-0 w-full h-full rounded-lg border-4 border-[#F26430]">
+                                                        </iframe>
+                                                    </div>
+                                                </div>
+                                            @else
+                                                <div class="text-center my-6">
+                                                    <a href="{{ $block['content'] }}" target="_blank" class="inline-block">
+                                                        <img src="https://placehold.co/500x300/F26430/ffffff?text=Click+to+Watch+Video" 
+                                                             alt="Video Placeholder" 
+                                                             class="border-4 border-[#F26430] cursor-pointer rounded-lg hover:opacity-90 transition-opacity">
+                                                    </a>
+                                                    <p class="text-sm text-gray-600 mt-2">Click image to view on YouTube</p>
+                                                </div>
+                                            @endif
+                                        
+                                        @elseif($block['type'] === 'image')
+                                            <div class="image-container my-6">
+                                                <h4 class="text-lg font-semibold text-gray-800 mb-3">🖼️ Visual Guide</h4>
+                                                <div class="border-2 border-[#F26430] p-4 rounded-lg bg-red-50">
+                                                    <img src="{{ $block['content'] }}" 
+                                                         alt="Lesson Image" 
+                                                         class="w-full h-auto border border-gray-400 rounded mb-3">
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            @else
+                                {{-- Fallback to old content field if no blocks --}}
+                                <div class="text-gray-700 prose max-w-none">
+                                    {!! nl2br(e($lesson->content)) !!}
+                                </div>
+                            @endif
                         </div>
                     </div>
 
                     <div class="pt-4">
-                        <h3 class="text-xl font-semibold text-gray-800 border-b pb-2">2. Embedded Video Demonstration
-                        </h3>
-                        <div class="text-center my-6">
-                            <a href="https://youtu.be/AawJ9IIdJtk?si=kle7vJJBaZKhvYbB" target="_blank"
-                                class="inline-block">
-                                <img src="https://placehold.co/500x300/F26430/ffffff?text=Click+to+Watch+Video"
-                                    alt="Video Placeholder: Click to watch externally"
-                                    class="border-4 border-[#F26430] cursor-pointer rounded-lg hover:opacity-90 transition-opacity">
-                            </a>
-                            <p class="text-sm text-gray-600 mt-2">Click image to view on YouTube</p>
-                        </div>
-                    </div>
-
-                    <div class="pt-4">
-                        <h3 class="text-xl font-semibold text-gray-800 border-b pb-2">3. Visual Guide: Empathy Stage
-                            Flow</h3>
-                        <div class="visual-guide border-2 border-[#F26430] p-4 rounded-lg bg-red-50 mt-4">
-                            <img src="https://placehold.co/600x400/F26430/ffffff?text=Empathy+Flowchart"
-                                alt="Flowchart of the Empathy Stage"
-                                class="w-full h-auto border border-gray-400 rounded mb-3">
-                            <p class="text-gray-700">This visual guide breaks down the abstract concept of the
-                                <strong>Empathise stage</strong>, showing how designers gather user data before defining
-                                the problem.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="pt-4">
-                        <h3 class="text-xl font-semibold text-gray-800 border-b pb-2">4. Lesson Materials</h3>
+                        <h3 class="text-xl font-semibold text-gray-800 border-b pb-2">Lesson Materials</h3>
                         @if ($lesson->material_path)
                             <p class="mt-2 text-lg">Downloadable Material:
                                 <a href="{{ Storage::url($lesson->material_path) }}" target="_blank"
@@ -76,7 +112,7 @@
                     </div>
 
                     <div class="pt-4">
-                        <h3 class="text-xl font-semibold text-gray-800 border-b pb-2">5. Practical Exercise Submission
+                        <h3 class="text-xl font-semibold text-gray-800 border-b pb-2">Practical Exercise Submission
                         </h3>
                         <p class="mb-4 text-gray-700 mt-2">Upload your practical exercise file here for grading.</p>
 

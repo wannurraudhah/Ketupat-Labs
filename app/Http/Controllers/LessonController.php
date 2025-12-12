@@ -33,7 +33,8 @@ class LessonController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'topic' => 'required|string|max:255',
-            'content' => 'nullable|string', // Added content validation
+            'content' => 'nullable|string', // Old field for backward compatibility
+            'content_blocks' => 'nullable|json', // New block-based content
             'duration' => 'nullable|integer|min:5',
             'material_file' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
             'url' => 'nullable|url',
@@ -47,11 +48,18 @@ class LessonController extends Controller
             $filePath = str_replace('public/', 'storage/', $storagePath);
         }
 
-        // 3. Create the Lesson Record in MySQL (Using validated data)
+        // 3. Parse content_blocks if provided
+        $contentBlocks = null;
+        if ($request->has('content_blocks')) {
+            $contentBlocks = json_decode($request->content_blocks, true);
+        }
+
+        // 4. Create the Lesson Record in MySQL (Using validated data)
         Lesson::create([
             'title' => $request->title,
             'topic' => $request->topic,
-            'content' => $request->input('content'), // Save content
+            'content' => $request->input('content'), // Legacy field
+            'content_blocks' => $contentBlocks, // New block-based content
             'material_path' => $filePath,
             'url' => $request->url,
             'duration' => $request->duration,
@@ -91,7 +99,8 @@ class LessonController extends Controller
         $validatedData = $request->validate([
             'title' => 'required|string|max:255',
             'topic' => 'required|string|max:255',
-            'content' => 'nullable|string', // Added content validation
+            'content_blocks' => 'nullable|json', // Block editor data
+            'content' => 'nullable|string', // Backward compatibility
             'duration' => 'nullable|integer|min:5',
             'material_file' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
             'url' => 'nullable|url',
@@ -111,11 +120,18 @@ class LessonController extends Controller
             $filePath = str_replace('public/', 'storage/', $storagePath);
         }
 
-        // 3. Update the Lesson Record (Using ONLY validated data + file path)
+        // 3. Prepare content_blocks data
+        $contentBlocks = null;
+        if ($request->has('content_blocks')) {
+            $contentBlocks = json_decode($request->content_blocks, true);
+        }
+
+        // 4. Update the Lesson Record (Using ONLY validated data + file path)
         $lesson->update([
             'title' => $validatedData['title'],
             'topic' => $validatedData['topic'],
-            'content' => $validatedData['content'] ?? $lesson->content, // Update content
+            'content_blocks' => $contentBlocks, // New block editor data
+            'content' => $validatedData['content'] ?? $lesson->content, // Backward compatibility
             'duration' => $validatedData['duration'],
             'material_path' => $filePath,
             'url' => $request->url ?? $lesson->url,
@@ -196,5 +212,28 @@ class LessonController extends Controller
         }
 
         return view('lessons.student-show', compact('lesson', 'submission'));
+    }
+
+    // --- API: Upload image for block editor ---
+    public function uploadImage(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // Max 5MB
+        ]);
+
+        if ($request->hasFile('image')) {
+            $storagePath = $request->file('image')->store('public/lessons/images');
+            $url = asset(str_replace('public/', 'storage/', $storagePath));
+
+            return response()->json([
+                'success' => true,
+                'url' => $url,
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'No image file provided',
+        ], 400);
     }
 }

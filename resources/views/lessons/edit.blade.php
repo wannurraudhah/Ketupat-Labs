@@ -30,11 +30,20 @@
                     </datalist>
                 </div>
 
+                {{-- Block Editor Section --}}
                 <div>
-                    <label for="content" class="block font-medium text-lg text-[#3E3E3E]">Lesson Content (Context) <span class="text-red-600">*</span></label>
-                    <textarea name="content" id="content" rows="6" required
-                              class="mt-1 block w-full border border-gray-400 rounded-md shadow-sm p-3 focus:border-[#2454FF] focus:ring focus:ring-[#2454FF]/50"
-                              placeholder="Write the lesson content here...">{{ old('content', $lesson->content) }}</textarea>
+                    <label class="block font-medium text-lg text-[#3E3E3E] mb-3">
+                        Lesson Content <span class="text-red-600">*</span>
+                    </label>
+                    <p class="text-sm text-gray-600 mb-4">
+                        Build your lesson using blocks. Add text, headings, YouTube videos, and images by clicking the blocks in the sidebar.
+                    </p>
+                    
+                    {{-- React Block Editor Container --}}
+                    <div id="block-editor-root" data-initial-blocks="{{ json_encode($lesson->content_blocks['blocks'] ?? []) }}"></div>
+                    
+                    {{-- Hidden input to store block data --}}
+                    <input type="hidden" name="content_blocks" id="content_blocks_input" required>
                 </div>
                 
                 <div>
