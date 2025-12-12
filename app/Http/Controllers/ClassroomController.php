@@ -100,7 +100,13 @@ class ClassroomController extends Controller
                         $q->where('user_id', $user->id);
                     }
                 ]);
-            }
+                $query->with([
+                    'enrollments' => function ($q) use ($user) {
+                        $q->where('user_id', $user->id);
+                    }
+                ]);
+            },
+            'activityAssignments.activity'
         ]);
 
         // Get students not enrolled in this class (needed for Teacher's Add Student dropdown)
@@ -139,7 +145,6 @@ class ClassroomController extends Controller
 
         $classroom->students()->attach($student->id, [
             'enrolled_at' => now(),
-            'class_id' => $classroom->id
         ]);
 
         // Backfill existing assignments for this student (US002-05 / US006-01)

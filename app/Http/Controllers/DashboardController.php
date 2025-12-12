@@ -44,17 +44,30 @@ class DashboardController extends Controller
                 ->latest('updated_at')
                 ->first();
 
-            // Fetch recent class assignments
+            // Fetch recent class assignments (Lessons)
             $recentAssignments = \App\Models\LessonAssignment::whereIn('classroom_id', $user->enrolledClassrooms->pluck('id'))
                 ->with('lesson', 'classroom')
                 ->latest('assigned_at')
                 ->take(5)
                 ->get();
 
+            // Fetch recent activity assignments
+            $recentActivities = \App\Models\ActivityAssignment::whereIn('classroom_id', $user->enrolledClassrooms->pluck('id'))
+                ->with('activity', 'classroom')
+                ->latest('assigned_at')
+                ->take(5)
+                ->get();
+            
+            // Merge and sort by date descending
+            $mixedTimeline = $recentAssignments->concat($recentActivities)
+                ->sortByDesc('assigned_at')
+                ->take(10); // Limit total items
+
             return view('dashboard.student', [
                 'user' => $user,
                 'recentFeedback' => $recentFeedback,
-                'recentAssignments' => $recentAssignments
+                'recentAssignments' => $recentAssignments, // Keep this if used elsewhere
+                'mixedTimeline' => $mixedTimeline
             ]);
         }
     }

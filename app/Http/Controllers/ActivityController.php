@@ -2,123 +2,71 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Activity;
 use App\Models\Classroom;
-use App\Models\Lesson;
-use App\Models\LessonAssignment;
-use App\Models\User;
+use App\Models\ActivityAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class ActivityController extends Controller
 {
-    public function index(Request $request): View
+    /**
+     * Display a listing of activities.
+     */
+    public function index(): View
     {
-        $user = User::find(session('user_id'));
-        if (!$user) {
-            abort(403, 'Unauthorized');
-        }
-
-        $isTeacher = $user->role === 'teacher';
-        $classrooms = [];
-        $lessons = [];
-        $events = [];
-        $selectedClass = null;
-        $classroom_id = $request->get('classroom_id');
-
-        $month = $request->get('month', date('n'));
-        $year = $request->get('year', date('Y'));
-
-        if ($isTeacher) {
-            $classrooms = Classroom::where('teacher_id', $user->id)->get();
-
-            // Default to first class if not selected
-            if (!$classroom_id && $classrooms->isNotEmpty()) {
-                $selectedClass = $classrooms->first();
-                $classroom_id = $selectedClass->id;
-            } elseif ($classroom_id) {
-                $selectedClass = $classrooms->find($classroom_id);
-            }
-
-            // Get all lessons (assuming can assign any lesson)
-            $lessons = Lesson::all(); // Alternatively, filter by subject if applicable
-
-            // Fetch Assignments for Calendar
-            if ($selectedClass) {
-                $assignments = LessonAssignment::with('lesson')
-                    ->where('classroom_id', $selectedClass->id)
-                    ->whereNotNull('due_date')
-                    ->get();
-
-                foreach ($assignments as $assignment) {
-                    $events[] = [
-                        'title' => $assignment->lesson->title,
-                        'start' => $assignment->due_date, // Full datetime
-                        'notes' => $assignment->notes,
-                        'lesson_id' => $assignment->lesson_id,
-                        'id' => $assignment->id
-                    ];
-                }
-            }
-
-        } else {
-            // Student View
-            // Get student's enrolled classrooms
-            // Just show all assignments across all classes? Or filter by class?
-            // Let's show all for now.
-            $classroomIds = $user->enrolledClassrooms()->pluck('classrooms.id');
-
-            $assignments = LessonAssignment::with(['lesson', 'classroom'])
-                ->whereIn('classroom_id', $classroomIds)
-                ->whereNotNull('due_date')
-                ->get();
-
-            foreach ($assignments as $assignment) {
-                $events[] = [
-                    'title' => $assignment->lesson->title . ' (' . $assignment->classroom->title . ')',
-                    'start' => $assignment->due_date,
-                    'notes' => $assignment->notes,
-                    'lesson_id' => $assignment->lesson_id,
-                    'id' => $assignment->id
-                ];
-            }
-        }
-
-        return view('activity.index', compact('classrooms', 'lessons', 'events', 'isTeacher', 'selectedClass', 'classroom_id', 'month', 'year'));
+        $userId = session('user_id');
+        $activities = Activity::where('teacher_id', $userId)->latest()->get();
+        return view('activities.index', compact('activities'));
     }
 
+    /**
+     * Show the form for creating a new activity.
+     */
+    public function create(): View
+    {
+        return view('activities.create');
+    }
+
+    /**
+     * Store a newly created activity in storage.
+     */
     public function store(Request $request): RedirectResponse
     {
-        $user = User::find(session('user_id'));
-        if (!$user || $user->role !== 'teacher') {
-            abort(403, 'Unauthorized');
-        }
-
         $request->validate([
-            'classroom_id' => 'required|exists:classrooms,id',
-            'lesson_id' => 'required|exists:lessons,id',
-            'due_date' => 'required|date',
-            'notes' => 'nullable|string'
+            'title' => 'required|string|max:255',
+            'type' => 'required|string|max:50',
+            'suggested_duration' => 'required|string|max:50',
+            'description' => 'nullable|string',
         ]);
 
-        // Check ownership of classroom
-        $classroom = Classroom::where('id', $request->classroom_id)
-            ->where('teacher_id', $user->id)
-            ->firstOrFail();
+        Activity::create([
+            'teacher_id' => session('user_id'),
+            'title' => $request->title,
+            'type' => $request->type,
+            'suggested_duration' => $request->suggested_duration,
+            'description' => $request->description,
+        ]);
 
-        LessonAssignment::updateOrCreate(
-            [
-                'classroom_id' => $request->classroom_id,
-                'lesson_id' => $request->lesson_id
-            ],
-            [
-                'due_date' => $request->due_date,
-                'notes' => $request->notes,
-                'type' => 'Mandatory' // Defaulting
-            ]
-        );
+        return redirect()->route('activities.index')->with('success', 'Aktiviti berjaya dicipta.');
+    }
 
-        return redirect()->route('activity.index', ['classroom_id' => $request->classroom_id])
-            ->with('success', 'Aktiviti berjaya dikemaskini.');
+    /**
+     * Assign an activity to a classroom.
+     */
+    public function assign(Request $request, Activity $activity): RedirectResponse
+    {
+         if (session('user_id') != $activity->teacher_id) {
+            abort(403);
+        }
+
+        // Redirect to Schedule page to set due date and classroom
+        return redirect()->route('schedule.index', ['activity_id' => $activity->id]);
+    }
+
+    public function show(Activity $activity): View
+    {
+        return view('activities.show', compact('activity'));
     }
 }

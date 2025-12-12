@@ -9,6 +9,40 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
+                    <!-- Document Upload Section -->
+                    <div class="mb-6 p-4 bg-gradient-to-r from-purple-50 to-green-50 rounded-lg border-2 border-dashed border-purple-300">
+                        <div class="flex items-center mb-3">
+                            <i class="fas fa-file-upload text-purple-600 text-xl mr-3"></i>
+                            <h3 class="text-lg font-semibold text-gray-900">{{ __('Upload Document (Optional)') }}</h3>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-3">{{ __('Upload a document (PDF, DOCX, TXT) and AI will read it to generate quiz questions based on its content.') }}</p>
+                        
+                        <div class="flex items-center space-x-3">
+                            <label for="document-upload-quiz" class="cursor-pointer inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                                <i class="fas fa-cloud-upload-alt mr-2"></i>
+                                {{ __('Choose File') }}
+                            </label>
+                            <input type="file" id="document-upload-quiz" name="document" accept=".pdf,.docx,.doc,.txt" class="hidden">
+                            <span id="file-name-quiz" class="text-sm text-gray-600 italic">{{ __('No file chosen') }}</span>
+                            <button type="button" id="clear-file-quiz" class="hidden text-red-600 hover:text-red-700">
+                                <i class="fas fa-times-circle"></i>
+                            </button>
+                        </div>
+                        
+                        <div id="document-preview-quiz" class="hidden mt-3 p-3 bg-white rounded border border-purple-200">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-file-alt text-purple-600"></i>
+                                    <span id="preview-file-name-quiz" class="text-sm font-medium text-gray-700"></span>
+                                    <span id="preview-file-size-quiz" class="text-xs text-gray-500"></span>
+                                </div>
+                                <span class="text-xs text-green-600 font-medium">
+                                    <i class="fas fa-check-circle mr-1"></i>{{ __('Ready') }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
                     <form id="quiz-generator-form" class="space-y-6">
                         @csrf
                         <div>
@@ -17,7 +51,8 @@
                             </label>
                             <input type="text" id="topic" name="topic" required
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                   placeholder="{{ __('e.g., Python Programming Basics') }}">
+                                   placeholder="{{ __('e.g., Python Programming Basics (or leave empty if uploading document)') }}">
+                            <p class="text-xs text-gray-500 mt-1">{{ __('If you upload a document, the AI will use its content. Otherwise, provide a topic.') }}</p>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -80,6 +115,54 @@
     </div>
 
     <script>
+        // Handle document upload for quiz
+        const documentUploadQuiz = document.getElementById('document-upload-quiz');
+        const fileNameQuiz = document.getElementById('file-name-quiz');
+        const clearFileBtnQuiz = document.getElementById('clear-file-quiz');
+        const documentPreviewQuiz = document.getElementById('document-preview-quiz');
+        const previewFileNameQuiz = document.getElementById('preview-file-name-quiz');
+        const previewFileSizeQuiz = document.getElementById('preview-file-size-quiz');
+        const topicInputQuiz = document.getElementById('topic');
+        
+        documentUploadQuiz.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Check file size (max 10MB)
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('{{ __('File size must be less than 10MB') }}');
+                    e.target.value = '';
+                    return;
+                }
+                
+                // Check file type
+                const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+                if (!allowedTypes.includes(file.type)) {
+                    alert('{{ __('Only PDF, DOCX, and TXT files are allowed') }}');
+                    e.target.value = '';
+                    return;
+                }
+                
+                fileNameQuiz.textContent = file.name;
+                clearFileBtnQuiz.classList.remove('hidden');
+                documentPreviewQuiz.classList.remove('hidden');
+                previewFileNameQuiz.textContent = file.name;
+                previewFileSizeQuiz.textContent = `(${(file.size / 1024).toFixed(2)} KB)`;
+                
+                // Make topic optional when document is uploaded
+                topicInputQuiz.required = false;
+                topicInputQuiz.placeholder = '{{ __('Optional - AI will extract from document') }}';
+            }
+        });
+        
+        clearFileBtnQuiz.addEventListener('click', function() {
+            documentUploadQuiz.value = '';
+            fileNameQuiz.textContent = '{{ __('No file chosen') }}';
+            clearFileBtnQuiz.classList.add('hidden');
+            documentPreviewQuiz.classList.add('hidden');
+            topicInputQuiz.required = true;
+            topicInputQuiz.placeholder = '{{ __('e.g., Python Programming Basics (or leave empty if uploading document)') }}';
+        });
+        
         document.getElementById('quiz-generator-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -98,6 +181,13 @@
             
             try {
                 const formData = new FormData(form);
+                
+                // Add document file if uploaded
+                const documentFile = documentUploadQuiz.files[0];
+                if (documentFile) {
+                    formData.append('document', documentFile);
+                }
+                
                 const response = await fetch('/api/ai-generator/quiz', {
                     method: 'POST',
                     headers: {

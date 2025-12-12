@@ -184,8 +184,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/monitoring', [\App\Http\Controllers\MonitoringController::class, 'index'])->name('monitoring.index');
     Route::get('/progress', [\App\Http\Controllers\ProgressController::class, 'index'])->name('progress.index');
     Route::get('/performance', [\App\Http\Controllers\PerformanceController::class, 'index'])->name('performance.index');
-    Route::match(['get', 'post'], '/activity', [\App\Http\Controllers\ActivityController::class, 'index'])->name('activity.index');
-    Route::post('/activity/store', [\App\Http\Controllers\ActivityController::class, 'store'])->name('activity.store');
+    Route::match(['get', 'post'], '/schedule', [\App\Http\Controllers\ScheduleController::class, 'index'])->name('schedule.index');
+    Route::post('/schedule/store', [\App\Http\Controllers\ScheduleController::class, 'store'])->name('schedule.store');
+    
+    // New Activity Management
+    Route::get('/activities', [\App\Http\Controllers\ActivityController::class, 'index'])->name('activities.index');
+    Route::get('/activities/create', [\App\Http\Controllers\ActivityController::class, 'create'])->name('activities.create');
+    Route::post('/activities', [\App\Http\Controllers\ActivityController::class, 'store'])->name('activities.store');
+    Route::post('/activities/{activity}/assign', [\App\Http\Controllers\ActivityController::class, 'assign'])->name('activities.assign');
+    Route::get('/activities/{activity}', [\App\Http\Controllers\ActivityController::class, 'show'])->name('activities.show');
     
     // Classroom routes
     Route::resource('classrooms', \App\Http\Controllers\ClassroomController::class);

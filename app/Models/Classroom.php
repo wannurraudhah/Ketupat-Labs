@@ -42,5 +42,10 @@ class Classroom extends Model
     {
         return $this->hasMany(LessonAssignment::class);
     }
+
+    public function activityAssignments(): HasMany
+    {
+        return $this->hasMany(ActivityAssignment::class);
+    }
 }
 

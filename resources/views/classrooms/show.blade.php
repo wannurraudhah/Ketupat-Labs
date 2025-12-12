@@ -144,64 +144,109 @@
                         </h3>
 
                         <div class="space-y-6">
-                            @forelse($classroom->lessons->sortByDesc('created_at') as $lesson)
+                            @php
+                                $timelineItems = $classroom->lessons->map(function($lesson) {
+                                    $lesson->timeline_date = $lesson->created_at;
+                                    $lesson->type_label = 'Lesson';
+                                    return $lesson;
+                                })->concat($classroom->activityAssignments->map(function($assignment) {
+                                    $assignment->timeline_date = $assignment->created_at; // Or assigned_at
+                                    $assignment->type_label = 'Activity';
+                                    return $assignment;
+                                }))->sortByDesc('timeline_date');
+                            @endphp
+
+                            @forelse($timelineItems as $item)
+                                @php
+                                    $isActivity = $item->type_label === 'Activity';
+                                @endphp
                                 <div class="relative pl-8 border-l-2 border-gray-200 pb-6 last:pb-0 last:border-0">
                                     {{-- Timeline Dot --}}
                                     <div
-                                        class="absolute -left-[9px] top-0 bg-white border-4 border-[#2454FF] h-4 w-4 rounded-full">
+                                        class="absolute -left-[9px] top-0 bg-white border-4 {{ $isActivity ? 'border-purple-600' : 'border-[#2454FF]' }} h-4 w-4 rounded-full">
                                     </div>
 
                                     <div
                                         class="bg-gray-50 rounded-lg p-5 border border-gray-200 hover:shadow-md transition duration-200">
                                         <div class="flex justify-between items-start">
                                             <div>
-                                                <h4 class="text-lg font-bold text-gray-800 hover:text-[#2454FF] transition">
-                                                    <a href="{{ route('lesson.show', $lesson) }}">{{ $lesson->title }}</a>
+                                                <h4 class="text-lg font-bold text-gray-800 {{ $isActivity ? 'hover:text-purple-600' : 'hover:text-[#2454FF]' }} transition">
+                                                    @if($isActivity)
+                                                        <a href="{{ route('activities.show', $item->activity) }}">{{ $item->activity->title }}</a>
+                                                        <span class="text-xs font-normal text-gray-500 ml-1">({{ $item->activity->suggested_duration }})</span>
+                                                    @else
+                                                        <a href="{{ route('lesson.show', $item) }}">{{ $item->title }}</a>
+                                                    @endif
                                                 </h4>
-                                                <p class="text-sm text-gray-500 mb-2">{{ $lesson->topic }} &bull; Posted
-                                                    {{ $lesson->created_at ? $lesson->created_at->format('M d, Y') : 'N/A' }}</p>
-                                                <p class="text-gray-600 text-sm mb-4">
-                                                    {{ Str::limit($lesson->content, 120) }}</p>
+                                                @if($isActivity)
+                                                     <p class="text-sm text-gray-500 mb-2">{{ $item->activity->type }} &bull; Assigned {{ $item->created_at->format('M d, Y') }}</p>
+                                                     <p class="text-gray-600 text-sm mb-4">{{ Str::limit($item->activity->description, 120) }}</p>
+                                                     @if($item->due_date)
+                                                        <p class="text-xs text-red-500 font-bold">Due: {{ \Carbon\Carbon::parse($item->due_date)->format('M d, Y') }}</p>
+                                                     @endif
+                                                @else
+                                                    <p class="text-sm text-gray-500 mb-2">{{ $item->topic }} &bull; Posted
+                                                        {{ $item->created_at ? $item->created_at->format('M d, Y') : 'N/A' }}</p>
+                                                    <p class="text-gray-600 text-sm mb-4">
+                                                        {{ Str::limit($item->content, 120) }}</p>
+                                                @endif
                                             </div>
                                             
                                             {{-- Status Badges --}}
                                             @if($user->role === 'teacher')
-                                                <div class="bg-blue-100 text-[#2454FF] text-xs font-bold px-2 py-1 rounded whitespace-nowrap ml-2">
-                                                    {{ $lesson->submissions->whereIn('user_id', $classroom->students->pluck('id'))->count() }}
-                                                    / {{ $classroom->students->count() }} Turned In
-                                                </div>
+                                                @if(!$isActivity)
+                                                    <div class="bg-blue-100 text-[#2454FF] text-xs font-bold px-2 py-1 rounded whitespace-nowrap ml-2">
+                                                        {{ $item->submissions->whereIn('user_id', $classroom->students->pluck('id'))->count() }}
+                                                        / {{ $classroom->students->count() }} Turned In
+                                                    </div>
+                                                @else
+                                                    <div class="bg-purple-100 text-purple-600 text-xs font-bold px-2 py-1 rounded whitespace-nowrap ml-2">
+                                                        Activity
+                                                    </div>
+                                                @endif
                                             @else
-                                                @php
-                                                    $enrollment = $lesson->enrollments->first();
-                                                    $status = $enrollment ? $enrollment->status : 'not_started';
-                                                    $statusColors = [
-                                                        'completed' => 'bg-green-100 text-green-800',
-                                                        'in_progress' => 'bg-yellow-100 text-yellow-800',
-                                                        'not_started' => 'bg-gray-100 text-gray-600',
-                                                    ];
-                                                    $statusLabel = [
-                                                        'completed' => 'Completed',
-                                                        'in_progress' => 'In Progress',
-                                                        'not_started' => 'Not Started',
-                                                    ];
-                                                @endphp
-                                                <div class="{{ $statusColors[$status] ?? 'bg-gray-100' }} text-xs font-bold px-2 py-1 rounded whitespace-nowrap ml-2 uppercase tracking-wide">
-                                                    {{ $statusLabel[$status] ?? 'Not Started' }}
-                                                </div>
+                                                @if(!$isActivity)
+                                                    @php
+                                                        $enrollment = $item->enrollments->first();
+                                                        $status = $enrollment ? $enrollment->status : 'not_started';
+                                                        $statusColors = [
+                                                            'completed' => 'bg-green-100 text-green-800',
+                                                            'in_progress' => 'bg-yellow-100 text-yellow-800',
+                                                            'not_started' => 'bg-gray-100 text-gray-600',
+                                                        ];
+                                                        $statusLabel = [
+                                                            'completed' => 'Completed',
+                                                            'in_progress' => 'In Progress',
+                                                            'not_started' => 'Not Started',
+                                                        ];
+                                                    @endphp
+                                                    <div class="{{ $statusColors[$status] ?? 'bg-gray-100' }} text-xs font-bold px-2 py-1 rounded whitespace-nowrap ml-2 uppercase tracking-wide">
+                                                        {{ $statusLabel[$status] ?? 'Not Started' }}
+                                                    </div>
+                                                @else
+                                                     <!-- Activity Status Logic if needed, currently just showing it exists -->
+                                                @endif
                                             @endif
                                         </div>
 
                                         <div class="flex space-x-3 mt-2">
-                                            <a href="{{ route('lesson.show', $lesson) }}"
-                                                class="text-sm font-semibold text-[#2454FF] hover:underline">
-                                                {{ $user->role === 'student' && ($lesson->enrollments->first()->status ?? '') === 'completed' ? 'Review Lesson' : 'Open Lesson' }}
-                                            </a>
-                                            @if($user->role === 'teacher')
-                                                <span class="text-gray-300">|</span>
-                                                <a href="{{ route('submission.index', ['lesson_id' => $lesson->id, 'classroom_id' => $classroom->id]) }}"
-                                                    class="text-sm font-semibold text-[#5FAD56] hover:underline">
-                                                    Grade Submissions
+                                            @if($isActivity)
+                                                <a href="{{ route('activities.show', $item->activity) }}"
+                                                    class="text-sm font-semibold text-purple-600 hover:underline">
+                                                    View Details
                                                 </a>
+                                            @else
+                                                <a href="{{ route('lesson.show', $item) }}"
+                                                    class="text-sm font-semibold text-[#2454FF] hover:underline">
+                                                    {{ $user->role === 'student' && ($item->enrollments->first()->status ?? '') === 'completed' ? 'Review Lesson' : 'Open Lesson' }}
+                                                </a>
+                                                @if($user->role === 'teacher')
+                                                    <span class="text-gray-300">|</span>
+                                                    <a href="{{ route('submission.index', ['lesson_id' => $item->id, 'classroom_id' => $classroom->id]) }}"
+                                                        class="text-sm font-semibold text-[#5FAD56] hover:underline">
+                                                        Grade Submissions
+                                                    </a>
+                                                @endif
                                             @endif
                                         </div>
                                     </div>
@@ -213,8 +258,8 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                                     </svg>
-                                    <h3 class="mt-2 text-sm font-medium text-gray-900">No lessons yet</h3>
-                                    <p class="mt-1 text-sm text-gray-500">Get started by creating a new lesson.</p>
+                                    <h3 class="mt-2 text-sm font-medium text-gray-900">No content yet</h3>
+                                    <p class="mt-1 text-sm text-gray-500">Get started by creating a new lesson or assigning an activity.</p>
                                 </div>
                             @endforelse
                         </div>

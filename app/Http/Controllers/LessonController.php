@@ -145,8 +145,39 @@ class LessonController extends Controller
     // --- STUDENT VIEW: List all published lessons ---
     public function studentIndex(): View
     {
-        $lessons = Lesson::where('is_published', true)->latest()->get();
-        return view('lessons.student-index', compact('lessons'));
+        // 1. Fetch Lessons
+        $lessons = Lesson::where('is_published', true)->get()->map(function($lesson) {
+            $lesson->setAttribute('item_type', 'lesson');
+            $lesson->setAttribute('sort_date', $lesson->created_at);
+            return $lesson;
+        });
+
+        // 2. Fetch Activities Assigned to User's Classrooms
+        $activities = collect();
+        if (session('user_id')) {
+            $user = \App\Models\User::find(session('user_id'));
+            if ($user && $user->role === 'student') {
+                $classroomIds = $user->enrolledClassrooms()->pluck('classes.id');
+                
+                $activities = \App\Models\ActivityAssignment::whereIn('classroom_id', $classroomIds)
+                    ->with('activity')
+                    ->get()
+                    ->map(function($assignment) {
+                        $activity = $assignment->activity;
+                        // Attach assignment details to activity object for view
+                        $activity->setAttribute('item_type', 'activity');
+                        $activity->setAttribute('sort_date', $assignment->assigned_at ?? $assignment->created_at);
+                        $activity->setAttribute('due_date', $assignment->due_date);
+                        $activity->setAttribute('assignment_id', $assignment->id);
+                        return $activity;
+                    });
+            }
+        }
+
+        // 3. Merge and Sort
+        $items = $lessons->concat($activities)->sortByDesc('sort_date');
+
+        return view('lessons.student-index', compact('items'));
     }
 
     // --- STUDENT VIEW: Show lesson content for students ---

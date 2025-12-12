@@ -2,62 +2,65 @@
 <div id="ketupat-chatbot" class="fixed bottom-6 right-6 z-50">
     <!-- Chatbot Button -->
     <button id="chatbot-toggle" 
-            class="bg-gradient-to-r from-[#F26430] to-[#FF8C42] text-white rounded-full w-16 h-16 shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110"
+            class="bg-gradient-to-r from-[#F26430] to-[#FF8C42] text-white rounded-full w-12 h-12 shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110"
             onclick="toggleChatbot()"
             aria-label="Open Ketupat Chatbot">
-        <i class="fas fa-robot text-2xl"></i>
+        <i class="fas fa-robot text-lg"></i>
     </button>
     
     <!-- Chatbot Window -->
     <div id="chatbot-window" 
-         class="hidden absolute bottom-20 right-0 w-96 h-[600px] bg-white rounded-lg shadow-2xl flex flex-col border border-gray-200">
+         class="hidden absolute bottom-16 right-0 w-80 h-[450px] bg-white rounded-lg shadow-2xl flex flex-col border border-gray-200"
+         style="z-index: 9999;">
         <!-- Header -->
-        <div class="bg-gradient-to-r from-[#F26430] to-[#FF8C42] text-white p-4 rounded-t-lg flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                    <i class="fas fa-robot text-[#F26430]"></i>
+        <div class="bg-gradient-to-r from-[#F26430] to-[#FF8C42] text-white p-3 rounded-t-lg flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                    <i class="fas fa-robot text-[#F26430] text-sm"></i>
                 </div>
                 <div>
-                    <h3 class="font-bold text-lg">{{ __('Ask Ketupat') }}</h3>
+                    <h3 class="font-bold text-base">{{ __('Ask Ketupat') }}</h3>
                     <p class="text-xs text-white/90">{{ __('AI Assistant') }}</p>
                 </div>
             </div>
             <button onclick="toggleChatbot()" 
                     class="text-white hover:text-gray-200 transition-colors"
                     aria-label="Close Chatbot">
-                <i class="fas fa-times text-xl"></i>
+                <i class="fas fa-times text-lg"></i>
             </button>
         </div>
         
         <!-- Messages Container -->
-        <div id="chatbot-messages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+        <div id="chatbot-messages" class="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50">
             <div class="flex items-start space-x-2">
-                <div class="w-8 h-8 bg-[#F26430] rounded-full flex items-center justify-center flex-shrink-0">
+                <div class="w-7 h-7 bg-[#F26430] rounded-full flex items-center justify-center flex-shrink-0">
                     <i class="fas fa-robot text-white text-xs"></i>
                 </div>
                 <div class="flex-1">
-                    <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
-                        <p class="text-sm text-gray-800">
-                            {{ __('Hello! I\'m Ketupat, your AI assistant. 👋 You can highlight any text on the page and ask me questions about it!') }}
+                    <div class="bg-white rounded-lg p-2.5 shadow-sm border border-gray-200">
+                        <p class="text-xs text-gray-800">
+                            {{ __('Hai! Saya Ketupat, pembantu AI anda. 👋 Anda boleh pilih mana-mana teks di halaman ini dan tanya saya soalan tentangnya!') }}
                         </p>
                     </div>
-                    <p class="text-xs text-gray-500 mt-1 ml-1">{{ __('Just now') }}</p>
+                    <p class="text-xs text-gray-500 mt-1 ml-1">{{ __('Baru sahaja') }}</p>
                 </div>
             </div>
         </div>
         
         <!-- Input Area -->
-        <div class="p-4 border-t border-gray-200 bg-white rounded-b-lg">
+        <div class="p-3 border-t border-gray-200 bg-white rounded-b-lg">
             <form id="chatbot-form" onsubmit="sendChatbotMessage(event)" class="flex space-x-2">
                 <input type="text" 
                        id="chatbot-input" 
-                       placeholder="{{ __('Type your message...') }}" 
-                       class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F26430] focus:border-transparent"
-                       autocomplete="off">
+                       placeholder="{{ __('Taip mesej anda...') }}" 
+                       class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F26430] focus:border-transparent"
+                       autocomplete="off"
+                       style="pointer-events: auto !important; z-index: 1;">
                 <button type="submit"
                         id="chatbot-send-btn"
-                        class="bg-[#F26430] hover:bg-[#FF8C42] text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                    <i class="fas fa-paper-plane"></i>
+                        class="bg-[#F26430] hover:bg-[#FF8C42] text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        style="pointer-events: auto !important; z-index: 1;">
+                    <i class="fas fa-paper-plane text-sm"></i>
                 </button>
             </form>
         </div>
@@ -161,16 +164,46 @@
     function toggleChatbot() {
         const window = document.getElementById('chatbot-window');
         const toggle = document.getElementById('chatbot-toggle');
+        const input = document.getElementById('chatbot-input');
         
         isChatbotOpen = !isChatbotOpen;
         
         if (isChatbotOpen) {
             window.classList.remove('hidden');
-            document.getElementById('chatbot-input').focus();
+            // Ensure input is enabled when opening
+            input.disabled = false;
+            document.getElementById('chatbot-send-btn').disabled = false;
+            setTimeout(() => input.focus(), 100);
         } else {
             window.classList.add('hidden');
         }
     }
+    
+    // Ensure input is enabled on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.getElementById('chatbot-input');
+        const sendBtn = document.getElementById('chatbot-send-btn');
+        
+        if (input) {
+            input.disabled = false;
+            input.readOnly = false;
+            
+            // Add click handler to ensure focus
+            input.addEventListener('click', function() {
+                console.log('Input clicked');
+                this.disabled = false;
+                this.readOnly = false;
+                this.focus();
+            });
+            
+            // Add test to see if input is working
+            input.addEventListener('keydown', function(e) {
+                console.log('Key pressed:', e.key);
+            });
+        }
+        
+        if (sendBtn) sendBtn.disabled = false;
+    });
 
     async function sendChatbotMessage(event) {
         event.preventDefault();
@@ -214,16 +247,23 @@
                 // Clear context after using it
                 selectedTextContext = '';
             } else {
-                addMessage('{{ __('Sorry, I encountered an error. Please try again.') }}', 'bot', true);
+                addMessage('{{ __('Maaf, saya menghadapi ralat. Sila cuba lagi.') }}', 'bot', true);
             }
         } catch (error) {
             console.error('Chatbot error:', error);
             removeTypingIndicator(typingId);
-            addMessage('{{ __('Sorry, I\'m having trouble connecting. Please check your internet connection and try again.') }}', 'bot', true);
+            addMessage('{{ __('Maaf, saya menghadapi masalah menyambung. Sila semak sambungan internet anda dan cuba lagi.') }}', 'bot', true);
         } finally {
-            input.disabled = false;
-            document.getElementById('chatbot-send-btn').disabled = false;
-            input.focus();
+            // Always re-enable input, even if there was an error
+            const input = document.getElementById('chatbot-input');
+            const sendBtn = document.getElementById('chatbot-send-btn');
+            if (input) {
+                input.disabled = false;
+                input.focus();
+            }
+            if (sendBtn) {
+                sendBtn.disabled = false;
+            }
         }
     }
     

@@ -56,6 +56,13 @@ Route::middleware('auth:web')->group(function () {
         Route::get('/{forumId}/reports', [ForumController::class, 'getForumReports']);
         Route::put('/report/{reportId}/status', [ForumController::class, 'updateReportStatus']);
         
+        // Forum management routes - must come before /{id} route
+        Route::get('/{id}/members', [ForumController::class, 'getForumMembers']);
+        Route::post('/{id}/members/promote', [ForumController::class, 'promoteMemberToAdmin']);
+        Route::delete('/{id}/members', [ForumController::class, 'removeMember']);
+        Route::put('/{id}', [ForumController::class, 'updateForum']);
+        Route::delete('/{id}', [ForumController::class, 'deleteForum']);
+        
         // This must be last to avoid catching other routes
         Route::get('/{id}', [ForumController::class, 'getForum']);
     });
@@ -101,15 +108,26 @@ Route::middleware('auth:web')->group(function () {
     // Classroom routes
     Route::get('/classrooms', [\App\Http\Controllers\ClassroomController::class, 'index']);
     
+    
     // Chatbot routes
     Route::prefix('chatbot')->group(function () {
         Route::post('/chat', [ChatbotController::class, 'chat']);
     });
     
-    // AI Generator routes
+    // AI Generator routes (Legacy)
     Route::prefix('ai-generator')->group(function () {
         Route::post('/slides', [\App\Http\Controllers\AIGeneratorController::class, 'generateSlides']);
         Route::post('/quiz', [\App\Http\Controllers\AIGeneratorController::class, 'generateQuiz']);
     });
+    
+    // AI Content routes (New Document Analyzer)
+    Route::prefix('ai-content')->group(function () {
+        Route::post('/analyze', [\App\Http\Controllers\AiContentController::class, 'analyze']);
+        Route::get('/', [\App\Http\Controllers\AiContentController::class, 'index']);
+        Route::get('/{id}', [\App\Http\Controllers\AiContentController::class, 'show']);
+        Route::put('/{id}', [\App\Http\Controllers\AiContentController::class, 'update']);
+        Route::delete('/{id}', [\App\Http\Controllers\AiContentController::class, 'destroy']);
+    });
 });
+
 

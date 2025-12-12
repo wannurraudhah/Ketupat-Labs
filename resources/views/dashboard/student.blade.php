@@ -127,36 +127,55 @@
                         </h3>
 
                         <div class="space-y-6">
-                            @forelse($recentAssignments as $assignment)
+
+                            @forelse($mixedTimeline ?? $recentAssignments as $item)
+                                @php
+                                    $isActivity = $item instanceof \App\Models\ActivityAssignment;
+                                    $entity = $isActivity ? $item->activity : $item->lesson;
+                                @endphp
                                 <div class="flex group">
                                     <div class="flex flex-col items-center mr-4">
                                         <div
-                                            class="w-2.5 h-2.5 bg-[#2454FF] rounded-full mt-2 group-hover:ring-2 ring-blue-100 transition-all">
+                                            class="w-2.5 h-2.5 {{ $isActivity ? 'bg-purple-600' : 'bg-[#2454FF]' }} rounded-full mt-2 group-hover:ring-2 {{ $isActivity ? 'ring-purple-100' : 'ring-blue-100' }} transition-all">
                                         </div>
                                         <div class="w-px h-full bg-gray-100 my-1 group-last:hidden"></div>
                                     </div>
                                     <div class="flex-1 pb-6 mb-2 border-b border-gray-50 last:border-0 last:pb-0">
                                         <div class="flex justify-between items-start mb-1">
                                             <span
-                                                class="text-[10px] font-bold text-[#2454FF] uppercase tracking-wider bg-blue-50 px-1.5 py-0.5 rounded">
-                                                {{ $assignment->classroom->subject }}
+                                                class="text-[10px] font-bold {{ $isActivity ? 'text-purple-600 bg-purple-50' : 'text-[#2454FF] bg-blue-50' }} uppercase tracking-wider px-1.5 py-0.5 rounded">
+                                                {{ $item->classroom->subject }}
                                             </span>
                                             <span class="text-xs text-gray-400">
-                                                {{ $assignment->assigned_at ? \Carbon\Carbon::parse($assignment->assigned_at)->diffForHumans() : __('Recently') }}
+                                                {{ $item->assigned_at ? \Carbon\Carbon::parse($item->assigned_at)->diffForHumans() : __('Recently') }}
                                             </span>
                                         </div>
                                         <h4 class="text-sm font-bold text-gray-800 hover:text-[#2454FF] transition mt-1">
-                                            <a
-                                                href="{{ route('lesson.show', $assignment->lesson) }}">{{ $assignment->lesson->title }}</a>
+                                            @if(!$isActivity)
+                                                <a href="{{ route('lesson.show', $entity) }}">{{ $entity->title }}</a>
+                                            @else
+                                                <a href="{{ route('activities.show', $entity) }}">{{ $entity->title }}</a>
+                                                <span class="text-xs font-normal text-gray-500 ml-1">({{ $entity->suggested_duration }})</span>
+                                            @endif
                                         </h4>
-                                        <a href="{{ route('lesson.show', $assignment->lesson) }}"
-                                            class="text-xs font-semibold text-gray-500 hover:text-[#2454FF] flex items-center mt-2">
-                                            {{ __('Start') }} <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M9 5l7 7-7 7"></path>
-                                            </svg>
-                                        </a>
+                                        
+                                        @if(!$isActivity)
+                                            <a href="{{ route('lesson.show', $entity) }}"
+                                                class="text-xs font-semibold text-gray-500 hover:text-[#2454FF] flex items-center mt-2">
+                                                {{ __('Start') }} <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M9 5l7 7-7 7"></path>
+                                                </svg>
+                                            </a>
+                                        @else
+                                             <div class="flex flex-col mt-1">
+                                                <span class="text-xs text-gray-500">{{ $entity->type }}</span>
+                                                @if($item->due_date)
+                                                    <span class="text-xs text-red-500 font-medium">Due: {{ \Carbon\Carbon::parse($item->due_date)->format('d M Y') }}</span>
+                                                @endif
+                                             </div>
+                                        @endif
                                     </div>
                                 </div>
                             @empty
