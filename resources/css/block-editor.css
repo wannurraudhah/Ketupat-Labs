@@ -155,3 +155,9 @@
   font-size: 14px;
   margin-bottom: 24px;
 }
+
+/* Game Config */
+.game-config {
+  max-height: 250px;
+  overflow-y: visible;
+}

@@ -11,19 +11,17 @@
                 </a>
             </div>
 
-            {{-- PROGRESS TRACKING MOCK (UC004 - Track Progress) --}}
+            {{-- PROGRESS TRACKING --}}
             <div class="progress-bar-area bg-gray-200 h-6 rounded-full mb-6">
-                <div class="progress-fill h-full text-center text-white bg-[#5FAD56] rounded-full" style="width: 50%;">
-                    50% Complete (Mock Data)
+                <div id="progress-fill" class="progress-fill h-full text-center text-white bg-[#5FAD56] rounded-full transition-all duration-300"
+                    style="width: 0%;">
+                    <span id="progress-text">0% Complete</span>
                 </div>
             </div>
 
             <div class="lesson-content-card space-y-6">
                 
-                <div class="clearfix">
-                    <button class="bg-[#F26430] hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-lg chat-button float-right" onclick="alert('Launching Chatbot Interface (M4)...')">
-                        Ask for Help (M4)
-                    </button>
+                <div>
                     <h3 class="text-xl font-semibold text-gray-800 border-b pb-2">Lesson Content</h3>
                     
                     {{-- Dynamic Block Rendering --}}
@@ -82,6 +80,18 @@
                                                      class="w-full h-auto border border-gray-400 rounded mb-3">
                                             </div>
                                         </div>
+                                    
+                                    @elseif($block['type'] === 'game')
+                                        <div class="game-container my-6">
+                                            @php
+                                                $gameConfig = json_decode($block['content'], true) ?? ['theme' => 'animals', 'gridSize' => 4];
+                                            @endphp
+                                            <div 
+                                                data-game-block 
+                                                data-game-type="memory"
+                                                data-game-config="{{ json_encode($gameConfig) }}">
+                                            </div>
+                                        </div>
                                     @endif
                                 </div>
                             @endforeach
@@ -119,4 +129,59 @@
         </div>
     </div>
 </div>
+
+{{-- Scroll Progress Tracking Script --}}
+<script>
+    (function() {
+        const lessonId = {{ $lesson->id }};
+        const storageKey = `lesson_${lessonId}_progress`;
+        const progressFill = document.getElementById('progress-fill');
+        const progressText = document.getElementById('progress-text');
+        
+        // Load saved progress
+        let maxProgress = parseInt(localStorage.getItem(storageKey) || '0');
+        
+        function updateProgress(percentage) {
+            // Only update if new percentage is higher
+            if (percentage > maxProgress) {
+                maxProgress = percentage;
+                localStorage.setItem(storageKey, maxProgress);
+            }
+            
+            // Update UI
+            progressFill.style.width = maxProgress + '%';
+            progressText.textContent = maxProgress + '% Complete';
+        }
+        
+        // Initialize with saved progress
+        updateProgress(maxProgress);
+        
+        // Track scroll position
+        function handleScroll() {
+            const windowHeight = window.innerHeight;
+            const documentHeight = document.documentElement.scrollHeight;
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            
+            // Calculate scroll percentage
+            const scrollableHeight = documentHeight - windowHeight;
+            const scrollPercentage = scrollableHeight > 0 
+                ? Math.round((scrollTop / scrollableHeight) * 100)
+                : 100;
+            
+            updateProgress(scrollPercentage);
+        }
+        
+        // Throttle scroll events for performance
+        let scrollTimeout;
+        window.addEventListener('scroll', function() {
+            if (scrollTimeout) {
+                clearTimeout(scrollTimeout);
+            }
+            scrollTimeout = setTimeout(handleScroll, 100);
+        });
+        
+        // Initial check
+        handleScroll();
+    })();
+</script>
 </x-app-layout>

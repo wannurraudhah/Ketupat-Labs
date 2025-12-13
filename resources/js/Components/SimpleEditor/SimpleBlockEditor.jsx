@@ -13,11 +13,15 @@ function SimpleBlockEditor({ initialBlocks = [], inputId = 'content_blocks_input
         { type: 'heading', label: 'Heading', icon: '📌' },
         { type: 'image', label: 'Image', icon: '🖼️' },
         { type: 'youtube', label: 'YouTube', icon: '▶️' },
+        { type: 'game', label: 'Memory Game', icon: '🎮' },
     ];
 
     // Add a new block
     const addBlock = (type) => {
-        setBlocks([...blocks, { id: Date.now(), type, content: '' }]);
+        const defaultContent = type === 'game'
+            ? JSON.stringify({ theme: 'animals', gridSize: 4 })
+            : '';
+        setBlocks([...blocks, { id: Date.now(), type, content: defaultContent }]);
     };
 
     // Update block content
@@ -68,6 +72,186 @@ function SimpleBlockEditor({ initialBlocks = [], inputId = 'content_blocks_input
                         onChange={(e) => updateBlock(block.id, e.target.value)}
                         placeholder="YouTube URL"
                     />
+                );
+            case 'game':
+                const gameConfig = block.content ? JSON.parse(block.content) : {
+                    mode: 'preset',
+                    theme: 'animals',
+                    gridSize: 4,
+                    customPairs: []
+                };
+
+                // Ensure customPairs exists for backward compatibility
+                if (!gameConfig.customPairs) {
+                    gameConfig.customPairs = [];
+                }
+
+                // Ensure mode exists for backward compatibility  
+                if (!gameConfig.mode) {
+                    gameConfig.mode = 'preset';
+                }
+
+                const updateGameConfig = (updates) => {
+                    updateBlock(block.id, JSON.stringify({ ...gameConfig, ...updates }));
+                };
+
+                const addPair = () => {
+                    const newPairs = [...gameConfig.customPairs, {
+                        id: Date.now(),
+                        card1: '',
+                        card2: ''
+                    }];
+                    updateGameConfig({ customPairs: newPairs });
+                };
+
+                const removePair = (id) => {
+                    const newPairs = gameConfig.customPairs.filter(p => p.id !== id);
+                    updateGameConfig({ customPairs: newPairs });
+                };
+
+                const updatePair = (id, field, value) => {
+                    const newPairs = gameConfig.customPairs.map(p =>
+                        p.id === id ? { ...p, [field]: value } : p
+                    );
+                    updateGameConfig({ customPairs: newPairs });
+                };
+
+                return (
+                    <div className="game-config">
+                        {/* Mode Selector */}
+                        <div style={{ marginBottom: '15px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>Mode:</label>
+                            <select
+                                value={gameConfig.mode || 'preset'}
+                                onChange={(e) => updateGameConfig({ mode: e.target.value })}
+                                style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                            >
+                                <option value="preset">Preset Themes (Animals, Fruits, Emojis)</option>
+                                <option value="custom">Custom Cards (Your Own Content)</option>
+                            </select>
+                        </div>
+
+                        {/* Preset Mode */}
+                        {gameConfig.mode === 'preset' && (
+                            <>
+                                <div style={{ marginBottom: '10px' }}>
+                                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>Theme:</label>
+                                    <select
+                                        value={gameConfig.theme}
+                                        onChange={(e) => updateGameConfig({ theme: e.target.value })}
+                                        style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                                    >
+                                        <option value="animals">Animals 🐶</option>
+                                        <option value="fruits">Fruits 🍎</option>
+                                        <option value="emojis">Emojis 😀</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>Grid Size:</label>
+                                    <select
+                                        value={gameConfig.gridSize}
+                                        onChange={(e) => updateGameConfig({ gridSize: parseInt(e.target.value) })}
+                                        style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                                    >
+                                        <option value="4">4x4 (Easy)</option>
+                                        <option value="6">6x6 (Medium)</option>
+                                    </select>
+                                </div>
+                            </>
+                        )}
+
+                        {/* Custom Mode */}
+                        {gameConfig.mode === 'custom' && (
+                            <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                    <label style={{ fontWeight: '600' }}>Matching Pairs:</label>
+                                    <button
+                                        type="button"
+                                        onClick={addPair}
+                                        style={{
+                                            padding: '5px 10px',
+                                            background: '#5FAD56',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '4px',
+                                            cursor: 'pointer',
+                                            fontSize: '12px'
+                                        }}
+                                    >
+                                        + Add Pair
+                                    </button>
+                                </div>
+
+                                <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: '4px', padding: '10px' }}>
+                                    {gameConfig.customPairs.length === 0 ? (
+                                        <div style={{ textAlign: 'center', padding: '20px', color: '#9ca3af' }}>
+                                            <p>No pairs yet. Click "+ Add Pair" to create matching cards.</p>
+                                        </div>
+                                    ) : (
+                                        gameConfig.customPairs.map((pair, index) => (
+                                            <div key={pair.id} style={{
+                                                display: 'grid',
+                                                gridTemplateColumns: '1fr 1fr auto',
+                                                gap: '8px',
+                                                marginBottom: '8px',
+                                                padding: '8px',
+                                                background: '#f9fafb',
+                                                borderRadius: '4px'
+                                            }}>
+                                                <input
+                                                    type="text"
+                                                    value={pair.card1}
+                                                    onChange={(e) => updatePair(pair.id, 'card1', e.target.value)}
+                                                    placeholder={`Card ${index + 1}A`}
+                                                    style={{
+                                                        padding: '6px',
+                                                        border: '1px solid #ddd',
+                                                        borderRadius: '4px',
+                                                        fontSize: '14px'
+                                                    }}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={pair.card2}
+                                                    onChange={(e) => updatePair(pair.id, 'card2', e.target.value)}
+                                                    placeholder={`Card ${index + 1}B`}
+                                                    style={{
+                                                        padding: '6px',
+                                                        border: '1px solid #ddd',
+                                                        borderRadius: '4px',
+                                                        fontSize: '14px'
+                                                    }}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removePair(pair.id)}
+                                                    style={{
+                                                        padding: '6px 10px',
+                                                        background: '#ef4444',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        borderRadius: '4px',
+                                                        cursor: 'pointer',
+                                                        fontSize: '12px'
+                                                    }}
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+
+                                <p style={{ marginTop: '10px', fontSize: '11px', color: '#666' }}>
+                                    💡 Tip: Each row creates a matching pair. Students will need to find both cards.
+                                </p>
+                            </div>
+                        )}
+
+                        <p style={{ marginTop: '10px', fontSize: '12px', color: '#666', borderTop: '1px solid #e5e7eb', paddingTop: '10px' }}>
+                            Students will see an interactive memory game
+                        </p>
+                    </div>
                 );
             default:
                 return (
