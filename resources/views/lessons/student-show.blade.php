@@ -92,6 +92,18 @@
                                                     data-game-config="{{ json_encode($gameConfig) }}">
                                                 </div>
                                             </div>
+                                        
+                                        @elseif($block['type'] === 'quiz')
+                                            <div class="quiz-container my-6">
+                                                @php
+                                                    $quizConfig = json_decode($block['content'], true) ?? ['questions' => []];
+                                                @endphp
+                                                <div 
+                                                    data-game-block 
+                                                    data-game-type="quiz"
+                                                    data-game-config="{{ json_encode($quizConfig) }}">
+                                                </div>
+                                            </div>
                                         @endif
                                     </div>
                                 @endforeach

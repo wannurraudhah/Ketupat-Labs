@@ -14,6 +14,7 @@ function SimpleBlockEditor({ initialBlocks = [], inputId = 'content_blocks_input
         { type: 'image', label: 'Image', icon: '🖼️' },
         { type: 'youtube', label: 'YouTube', icon: '▶️' },
         { type: 'game', label: 'Memory Game', icon: '🎮' },
+        { type: 'quiz', label: 'Quiz Game', icon: '❓' },
     ];
 
     // Add a new block
@@ -250,6 +251,171 @@ function SimpleBlockEditor({ initialBlocks = [], inputId = 'content_blocks_input
 
                         <p style={{ marginTop: '10px', fontSize: '12px', color: '#666', borderTop: '1px solid #e5e7eb', paddingTop: '10px' }}>
                             Students will see an interactive memory game
+                        </p>
+                    </div>
+                );
+            case 'quiz':
+                const quizConfig = block.content ? JSON.parse(block.content) : {
+                    questions: []
+                };
+
+                // Ensure questions array exists
+                if (!quizConfig.questions) {
+                    quizConfig.questions = [];
+                }
+
+                const updateQuizConfig = (updates) => {
+                    updateBlock(block.id, JSON.stringify({ ...quizConfig, ...updates }));
+                };
+
+                const addQuestion = () => {
+                    const newQuestions = [...quizConfig.questions, {
+                        id: Date.now(),
+                        question: '',
+                        answers: ['', '', '', ''],
+                        correctAnswer: 0
+                    }];
+                    updateQuizConfig({ questions: newQuestions });
+                };
+
+                const removeQuestion = (id) => {
+                    const newQuestions = quizConfig.questions.filter(q => q.id !== id);
+                    updateQuizConfig({ questions: newQuestions });
+                };
+
+                const updateQuestion = (id, field, value) => {
+                    const newQuestions = quizConfig.questions.map(q =>
+                        q.id === id ? { ...q, [field]: value } : q
+                    );
+                    updateQuizConfig({ questions: newQuestions });
+                };
+
+                const updateAnswer = (questionId, answerIndex, value) => {
+                    const newQuestions = quizConfig.questions.map(q => {
+                        if (q.id === questionId) {
+                            const newAnswers = [...q.answers];
+                            newAnswers[answerIndex] = value;
+                            return { ...q, answers: newAnswers };
+                        }
+                        return q;
+                    });
+                    updateQuizConfig({ questions: newQuestions });
+                };
+
+                return (
+                    <div className="quiz-config">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                            <label style={{ fontWeight: '600' }}>Quiz Questions:</label>
+                            <button
+                                type="button"
+                                onClick={addQuestion}
+                                style={{
+                                    padding: '5px 10px',
+                                    background: '#5FAD56',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontSize: '12px'
+                                }}
+                            >
+                                + Add Question
+                            </button>
+                        </div>
+
+                        <div style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: '4px', padding: '10px' }}>
+                            {quizConfig.questions.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '20px', color: '#9ca3af' }}>
+                                    <p>No questions yet. Click "+ Add Question" to create quiz questions.</p>
+                                </div>
+                            ) : (
+                                quizConfig.questions.map((question, qIndex) => (
+                                    <div key={question.id} style={{
+                                        marginBottom: '15px',
+                                        padding: '12px',
+                                        background: '#f9fafb',
+                                        borderRadius: '4px',
+                                        border: '1px solid #e5e7eb'
+                                    }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                            <strong style={{ color: '#374151' }}>Question {qIndex + 1}</strong>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeQuestion(question.id)}
+                                                style={{
+                                                    padding: '4px 8px',
+                                                    background: '#ef4444',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '4px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '12px'
+                                                }}
+                                            >
+                                                ✕ Remove
+                                            </button>
+                                        </div>
+
+                                        <input
+                                            type="text"
+                                            value={question.question}
+                                            onChange={(e) => updateQuestion(question.id, 'question', e.target.value)}
+                                            placeholder="Enter your question here..."
+                                            style={{
+                                                width: '100%',
+                                                padding: '8px',
+                                                marginBottom: '10px',
+                                                border: '1px solid #ddd',
+                                                borderRadius: '4px',
+                                                fontSize: '14px',
+                                                fontWeight: '500'
+                                            }}
+                                        />
+
+                                        <div style={{ marginBottom: '10px' }}>
+                                            <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '5px' }}>
+                                                Answer Options:
+                                            </label>
+                                            {question.answers.map((answer, aIndex) => (
+                                                <div key={aIndex} style={{ display: 'flex', alignItems: 'center', marginBottom: '6px' }}>
+                                                    <input
+                                                        type="radio"
+                                                        name={`correct-${question.id}`}
+                                                        checked={question.correctAnswer === aIndex}
+                                                        onChange={() => updateQuestion(question.id, 'correctAnswer', aIndex)}
+                                                        style={{ marginRight: '8px', cursor: 'pointer' }}
+                                                        title="Mark as correct answer"
+                                                    />
+                                                    <span style={{ marginRight: '8px', fontWeight: '600', color: '#6b7280' }}>
+                                                        {String.fromCharCode(65 + aIndex)}.
+                                                    </span>
+                                                    <input
+                                                        type="text"
+                                                        value={answer}
+                                                        onChange={(e) => updateAnswer(question.id, aIndex, e.target.value)}
+                                                        placeholder={`Answer ${String.fromCharCode(65 + aIndex)}`}
+                                                        style={{
+                                                            flex: 1,
+                                                            padding: '6px',
+                                                            border: '1px solid #ddd',
+                                                            borderRadius: '4px',
+                                                            fontSize: '13px'
+                                                        }}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <p style={{ fontSize: '11px', color: '#6b7280', fontStyle: 'italic' }}>
+                                            💡 Select the radio button next to the correct answer
+                                        </p>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        <p style={{ marginTop: '10px', fontSize: '12px', color: '#666', borderTop: '1px solid #e5e7eb', paddingTop: '10px' }}>
+                            Students will answer these questions and see their score
                         </p>
                     </div>
                 );

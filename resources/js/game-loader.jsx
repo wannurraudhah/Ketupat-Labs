@@ -1,12 +1,14 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import MemoryGame from './Components/Games/MemoryGame';
+import QuizGame from './Components/Games/QuizGame';
 
 console.log('🎮 Game loader script loaded!');
 
 // Game component mapping
 const gameComponents = {
     'memory': MemoryGame,
+    'quiz': QuizGame,
 };
 
 // Function to initialize games

@@ -92,6 +92,18 @@
                                                 data-game-config="{{ json_encode($gameConfig) }}">
                                             </div>
                                         </div>
+                                    
+                                    @elseif($block['type'] === 'quiz')
+                                        <div class="quiz-container my-6">
+                                            @php
+                                                $quizConfig = json_decode($block['content'], true) ?? ['questions' => []];
+                                            @endphp
+                                            <div 
+                                                data-game-block 
+                                                data-game-type="quiz"
+                                                data-game-config="{{ json_encode($quizConfig) }}">
+                                            </div>
+                                        </div>
                                     @endif
                                 </div>
                             @endforeach
@@ -117,14 +129,6 @@
                     @endif
                 </div>
 
-                <div class="pt-4">
-                    <h3 class="text-xl font-semibold text-gray-800 border-b pb-2">Assessment Links</h3>
-                    <a href="{{ route('lessons.show', ['lesson' => $lesson->id, 'action' => 'quiz']) }}" class="assessment-button text-white font-bold py-3 px-6 rounded-lg transition ease-in-out duration-150" style="background-color: #2454FF; text-decoration: none;">
-                        Start Gamified Quiz (UC007)
-                    </a>
-                </div>
-
-            </div>
 
         </div>
     </div>
